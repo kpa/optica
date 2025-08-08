@@ -1,5 +1,15 @@
 <?php
+session_start();
 require 'config.php';
+
+header("Content-Security-Policy: default-src 'self'");
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: SAMEORIGIN");
+header("X-XSS-Protection: 1; mode=block");
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 $result = $mysqli->query("SELECT * FROM clientes ORDER BY id DESC");
 ?>
@@ -33,8 +43,12 @@ $result = $mysqli->query("SELECT * FROM clientes ORDER BY id DESC");
                 <td><?= htmlspecialchars($row['telefono']) ?></td>
                 <td><?= htmlspecialchars($row['direccion']) ?></td>
                 <td>
-                    <a href="editar.php?id=<?= $row['id'] ?>">Editar</a>
-                    <a href="eliminar.php?id=<?= $row['id'] ?>" onclick="return confirm('¿Eliminar cliente?')">Eliminar</a>
+                    <a href="editar.php?id=<?= urlencode($row['id']) ?>">Editar</a>
+                    <form action="eliminar.php" method="POST" style="display:inline;">
+                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                        <button onclick="return confirm('¿Eliminar cliente?')">Eliminar</button>
+                    </form>                    
                 </td>
             </tr>
             <?php endwhile; ?>

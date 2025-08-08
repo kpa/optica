@@ -1,9 +1,19 @@
 <?php
+session_start();
 require 'config.php';
 
 if (!isset($_GET['id'])) {
     header('Location: index.php');
     exit;
+}
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id) {
+    die("ID inválido");
 }
 
 $id = intval($_GET['id']);
@@ -20,7 +30,10 @@ if (!$cliente) {
 
 $errors = [];
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        die("CSRF token inválido");
+    }
     $nombre = trim($_POST['nombre']);
     $apellido = trim($_POST['apellido']);
     $email = trim($_POST['email']);
@@ -73,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <?php endif; ?>
 
     <form method="POST">
+        √<input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
         <label>Nombre:<br><input type="text" name="nombre" value="<?= htmlspecialchars($nombre) ?>"></label><br><br>
         <label>Apellido:<br><input type="text" name="apellido" value="<?= htmlspecialchars($apellido) ?>"></label><br><br>
         <label>Email:<br><input type="email" name="email" value="<?= htmlspecialchars($email) ?>"></label><br><br>
